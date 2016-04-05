@@ -24,18 +24,18 @@ page.onAlert = (function(msg) {
 });
 
 DEV.parseLinks = (function(link) {
-	// if (link.indexOf('getting-started') !== -1)
-	// return true;
- //  if (link.indexOf('chart-guide') !== -1)
- //  return true;
-  if (link.indexOf('gauge-and-widgets-guide/bulb-gauge/real-time-gauges') !== -1)
+	if (link.indexOf('getting-started') !== -1)
+	return true;
+  if (link.indexOf('chart-guide') !== -1)
   return true;
-  // if (link.indexOf('map-guide') !== -1)
-  // return true;
-  // if (link.indexOf('basic-chart-configurations') !== -1)
-  // return true;
-  // if (link.indexOf('advanced-chart-configurations') !== -1)
-  // return true;
+  if (link.indexOf('gauge-and-widgets-guide') !== -1)
+  return true;
+  if (link.indexOf('map-guide') !== -1)
+  return true;
+  if (link.indexOf('basic-chart-configurations') !== -1)
+  return true;
+  if (link.indexOf('advanced-chart-configurations') !== -1)
+  return true;
 	else
 	return false;	
   });
@@ -59,12 +59,12 @@ DEV.getLinks = (function() {
     data = page.evaluate(function() {
     	var resources = [];
     	$(".toc-list a").each(function() {
-            if($(this).attr("href")) {
-                var url = $(this).attr("href");
-                url = $(location)[0].origin + url;
-                resources.push(url);
-            }
-        });
+        if($(this).attr("href")) {
+          var url = $(this).attr("href");
+          url = $(location)[0].origin + url;
+          resources.push(url);
+        }
+      });
 
     	return JSON.stringify(resources);
     });
@@ -108,24 +108,23 @@ DEV.readContents = (function(){
 	  for(var i=0; i<data.length; i++) {
       var location = link.replace('.html', '').toLowerCase().split(' ').join('-'),
           html = data[i].html,
+          name = data[i].name,
           requireFile,
           requireFileName;
-	  	//DEV.fs.write(location + '/' + data[i].name + '.html', data[i].html); 
+      
+      DEV.fs.write(location + '/' + name + '.html', html);
 
       if(html.indexOf('dataStreamURL') !== -1) {
-        requireFile = data[i].html.match(/\"dataStreamURL\":\s(.*),/)[1];
-        requireFileName = requireFile.split('/').pop().replace("\"", "").replace("\"", "");
-        //var html = data[i].html;
-        html = html.replace(requireFile, "\"" + requireFileName + "\"");
+        requireFile = html.match(/\"dataStreamURL\":\s(.*),?/)[1];
+        requireFileName = requireFile.split('/').pop().split("\"").join('').replace(',', '');
         console.log(requireFileName);
-        //requireFile = requireFile.split('/').pop().replace("\"", "");
-        //DEV.fs.write(location + '/' + data[i].name + '.html', html);
+        html = html.replace(requireFile, "\"" + requireFileName + "\"");
+        DEV.fs.write(location + '/' + name + '.html', html); 
+       
         if(!DEV.fs.exists(location + "/" + requireFileName) && DEV.fs.exists("resources/" + requireFileName))
-          DEV.fs.copy("resources/" + requireFileName, location + "/" + requireFileName);        
-      }
+          DEV.fs.copy("resources/" + requireFileName, location + "/" + requireFileName); 
 
-        DEV.fs.write(location + '/' + data[i].name + '.html', html); 
-      
+      }   
     }
 
     console.log("****** File write done ******");
