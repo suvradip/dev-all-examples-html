@@ -25,27 +25,27 @@ page.onAlert = (function(msg) {
 
 DEV.parseLinks = (function(link) {
 	if (link.indexOf('getting-started') !== -1)
-	return true;
+	return {doParse:true, newLink: "out/Beginner's Guide-"+ link };
   if (link.indexOf('chart-guide') !== -1)
-  return true;
+  return {doParse:true, newLink: "out/Charts - Gauges - Maps Guide-"+ link };
   if (link.indexOf('gauge-and-widgets-guide') !== -1)
-  return true;
+  return {doParse:true, newLink: "out/Charts - Gauges - Maps Guide-"+ link };
   if (link.indexOf('map-guide') !== -1)
-  return true;
+  return {doParse:true, newLink: "out/Charts - Gauges - Maps Guide-"+ link };
   if (link.indexOf('basic-chart-configurations') !== -1)
-  return true;
+  return {doParse:true, newLink: "out/Customizing Charts-"+ link };
   if (link.indexOf('advanced-chart-configurations') !== -1)
-  return true;
+  return {doParse:true, newLink: "out/Customizing Charts"+ link };
 	else
-	return false;	
+	return false;
   });
 
 DEV.prepareHtml = (function() {
 
-	if(DEV.parseLinks(DEV.hrefs[DEV.counter])) {
+	if(DEV.parseLinks(DEV.hrefs[DEV.counter]).doParse) {
 		DEV.opensublink(DEV.hrefs[DEV.counter], DEV.readContents);
 	} else if (DEV.hrefs[DEV.counter + 1]) {
-		DEV.counter ++;	
+		DEV.counter ++;
     DEV.prepareHtml();
 	} else {
     console.log('All links parse complete.');
@@ -69,10 +69,10 @@ DEV.getLinks = (function() {
     	return JSON.stringify(resources);
     });
   } //end of IF
-  			
+
   if(data) {
-    DEV.hrefs = JSON.parse(data);		
-    DEV.fs.write('links.txt', JSON.stringify(DEV.hrefs, null, 4));	 	
+    DEV.hrefs = JSON.parse(data);
+    DEV.fs.write('links.txt', JSON.stringify(DEV.hrefs, null, 4));
     console.log("****** Links done Total Links : " + DEV.hrefs.length + "******");
     DEV.prepareHtml();
   } else phantom.exit();
@@ -84,7 +84,7 @@ DEV.readContents = (function(){
   if (page.injectJs("jquery.js")) {
     data = page.evaluate(function() {
     	var h2tag = htmlCont = final = [];
-    	h2tag = $('.tab-content').prevAll('h2');			
+    	h2tag = $('.tab-content').prevAll('h2');
     	htmlCont = $('.tab-content .tab.html-tab code');
 
     	for(var i=0; i<htmlCont.length; i++) {
@@ -104,14 +104,14 @@ DEV.readContents = (function(){
 		console.log('data length : ' + data.length);
     if( data.length > 0 ) {
 	  var link = DEV.hrefs[DEV.counter];
-    link = link.replace(DEV.origin + 'paradocs/jekyll/', '');
+    link = link.replace(DEV.origin + 'paradocs/jekyll/out/', '');
 	  for(var i=0; i<data.length; i++) {
       var location = link.replace('.html', '').toLowerCase().split(' ').join('-'),
           html = data[i].html,
           name = data[i].name,
           requireFile,
           requireFileName;
-      
+      location =  DEV.parseLinks(location).newLink;
       DEV.fs.write(location + '/' + name + '.html', html);
 
       if(html.indexOf('dataStreamURL') !== -1) {
@@ -119,40 +119,40 @@ DEV.readContents = (function(){
         requireFileName = requireFile.split('/').pop().split("\"").join('').replace(',', '');
         console.log(requireFileName);
         html = html.replace(requireFile, "\"" + requireFileName + "\"");
-        DEV.fs.write(location + '/' + name + '.html', html); 
-       
-        if(!DEV.fs.exists(location + "/" + requireFileName) && DEV.fs.exists("resources/" + requireFileName))
-          DEV.fs.copy("resources/" + requireFileName, location + "/" + requireFileName); 
+        DEV.fs.write(location + '/' + name + '.html', html);
 
-      }   
+        if(!DEV.fs.exists(location + "/" + requireFileName) && DEV.fs.exists("resources/" + requireFileName))
+          DEV.fs.copy("resources/" + requireFileName, location + "/" + requireFileName);
+
+      }
     }
 
     console.log("****** File write done ******");
     console.log("");
-    DEV.counter ++;	
+    DEV.counter ++;
     DEV.prepareHtml();
 
   } else {
 
-    DEV.counter ++; 
+    DEV.counter ++;
     DEV.prepareHtml();
   }
 });
 
 DEV.opensublink = (function(url, func) {
-   
+
   console.log("** Openning --> " + (DEV.counter + 1) + "  " + url + " **");
   if(url === 'undefined' || !url)
     phantom.exit();
-      
+
   page.open(url, function(status) {
     if (status == 'success') {
        setTimeout(function() {
            func();
-        }, 3000);      
-        
+        }, 3000);
+
     }
-  });    
+  });
 });
 
 DEV.opensublink(DEV.url, DEV.getLinks);
